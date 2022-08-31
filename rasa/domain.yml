@@ -1,0 +1,127 @@
+version: "3.1"
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true
+
+intents:
+- EXTERNAL_greet
+- EXTERNAL_battery_low
+- specify_name
+- close_door_window
+- specify_lunch
+- goodbye
+- get_lunch
+- fetch_object
+- out_of_scope
+- bot_challenge
+
+entities:
+- closable_object
+- food_dish
+- object
+- name
+- name_provided
+- battery_low
+
+slots:
+
+ lunch_selection:
+   type: text
+   influence_conversation: true
+   mappings:
+   - type: from_entity
+     entity: food_dish
+
+ object_to_be_fetched:
+   type: text
+   influence_conversation: false
+   mappings:
+   - type: from_entity
+     entity: object
+     intent: fetch_object
+
+ object_to_be_closed:
+   type: list
+   influence_conversation: false
+   mappings:
+   - type: from_entity
+     entity: closable_object
+     intent: close_door_window
+
+ name:
+   type: text
+   influence_conversation: true
+   mappings:
+   - type: from_entity
+     entity: name
+     conditions:
+     - active_loop: name_form
+       requested_slot: name
+
+ name_provided:
+   type: bool
+   influence_conversation: false
+   mappings:
+   - type: from_entity
+     entity: name_provided
+     
+ battery_low:
+   type: bool
+   influence_conversation: false
+   mappings:
+   - type: from_entity
+     entity: battery_low
+
+responses:
+  utter_ask_request:
+  - text: Hi {name}! How may I help you
+
+  utter_ask_name:
+  - text: What is your name?
+
+  utter_goodbye:
+  - custom:
+      stop: true
+      text: Bye, have a great day!
+
+  utter_iamabot:
+  - text: I am a bot.
+
+  utter_get_object:
+  - custom:
+      pause: true
+      text: Sure, I'll get a {object_to_be_fetched} for you
+
+  utter_ask_lunch_selection:
+  - text: What would you like for lunch? Here's today's menu
+
+  utter_confirm_lunch:
+  - custom:
+      pause: true
+      text: You wanted {lunch_selection}. I'll get that for you right away
+
+  utter_close_door_window:
+  - custom:
+      pause: true
+      text: Sure, I'll close it
+
+  utter_out_of_scope:
+  - text: I'm afraid I don't understand that
+  utter_default:
+  - text: I'm sorry, I can't help you.
+  utter_ask_rephrase:
+  - text: I'm sorry, I didn't quite understand that. Could you rephrase?
+
+actions:
+- action_greet
+- action_battery_low
+
+forms:
+  lunch_form:
+    required_slots:
+    - lunch_selection
+  
+  name_form:
+    required_slots:
+    - name

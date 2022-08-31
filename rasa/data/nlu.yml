@@ -1,0 +1,206 @@
+version: "3.1"
+
+nlu:
+- regex: name
+  examples: |
+    - \w{2,}
+
+- intent: specify_name
+  examples: |
+    - [rahul](name)
+
+- intent: EXTERNAL_greet
+  examples: |
+    - hey
+    - hello
+    - hi
+    - hello there
+    - good morning
+    - good evening
+    - moin
+    - hey there
+    - let's go
+    - hey dude
+    - goodmorning
+    - goodevening
+    - good afternoon
+    - What's up?
+    - hi again
+    - Hi
+    - Hi there
+    - hows it going
+    - howdy
+    - Whats up
+    - yo sup
+
+- intent: goodbye
+  examples: |
+    - cu
+    - good by
+    - cee you later
+    - good night
+    - bye
+    - goodbye
+    - have a nice day
+    - see you around
+    - bye bye
+    - see you later
+    - see ya
+    - gotta go
+    - got to go
+    - farewell
+    - ill see you
+
+- intent: bot_challenge
+  examples: |
+    - are you a bot?
+    - are you a human?
+    - am I talking to a bot?
+    - am I talking to a human?
+    - are you alive
+    - are you living
+
+- intent: fetch_object
+  examples: |
+    - could you get that for me
+    - can you get my for me
+    - could you get the for me
+    - can you get a for me
+    - could you get an for me
+    - can you get that for me
+    - could you fetch that for me
+    - can you bring that to me
+    - get my [bottle](object)
+    - get a [chair](object)
+    - fetch my [bottle](object) for me
+    - Could you please bring a [chair](object)?
+    - Can you bring a [chair](object) here?
+    - Bring my [bottle](object) here
+    - fetch a [pen](object) for me
+    - bring me a [pen](object)
+    - get me a [chair](object) please
+    - get me a [chair](object) pleaqse
+    - get me a [chair](object) plerase
+    - i need a [marker](object), can you get it
+    - get me a [marker](object) please
+    - coulld you fetch a [marker](object)?
+    - i need to write something, could you get a [marker](object)
+    - im thirsty, could you get my [bottle](object)
+    - get an extra [chair](object) here please
+    - can you fetch a [glass of water](object)
+    - could you fetch a [marker](object)
+    - fetch me a [bottle](object)
+    - Bring a [glass of water](object) here
+    - fetch a [glass of water](object) for me
+    - bring me a [glass of water](object)
+
+- intent: get_lunch
+  examples: |
+    - could you get me my lunch
+    - i want my lunch
+    - can i have my lunch
+    - i need food
+    - i am hungry
+    - can you bring my lunch
+    - get my food
+    - bring my lunch
+    - i would like some lunch
+    - what is for lunvh today
+    - I'm really hungry. Could you get me my lunch?
+    - im really hungy, id like my lunch now
+    - im pretty hungry. could you get me [dosa](food_dish) for lunch
+    - im really hungry. could you get me a [pizza](food_dish) for lunch
+    - im hungry. could you get me some [rice](food_dish) for lunch
+    - im hungry. could you get me two [rotis](food_dish) for lunch
+    - could you get me two [pizzas](food_dish) for lunch
+    - can you get me a [burger](food_dish) for lunch
+    - get me a [sandwhich](food_dish) for lunch
+    - could you get me some [biryani](food_dish) for lunch
+    - can you get me [idli](food_dish) for lunch
+    - fetch my lunch please
+    - i really hungry i need my lunch
+    - get me [pasta](food_dish) for lunch
+    - get me some [pizza](food_dish) for lunch
+    - get me [idli](food_dish) for lunch
+    - get me a [roti](food_dish) for lunch
+
+- intent: specify_lunch
+  examples: |
+    - I want a [sandwhich](food_dish) for lunch
+    - i want [pizza](food_dish)
+    - I want a [burger](food_dish)
+    - I want [dosa](food_dish)
+    - I'll have [rice](food_dish)
+    - i'll have [pasta](food_dish) for lunch
+    - get me [roti](food_dish) for lunch
+    - get me a [sandwhich](food_dish)
+    - get me a plate of [biryani](food_dish)
+    - bring me a [roti](food_dish) for lunch
+    - bring me [salad](food_dish)
+    - bring me [dosa](food_dish)
+    - [roti](food_dish) looks good
+    - [burger](food_dish) looks good
+    - [spaghetti](food_dish) looks good
+    - id like [spaghetti](food_dish)
+    - id like [idli](food_dish) for lunch
+    - id like [rice](food_dish)
+    - ill take [rice](food_dish)
+    - i'll take [spaghetti](food_dish)
+    - I'll take a plate of [biryani](food_dish) for lunch
+    - I'll have [idli](food_dish)
+    - [pasta](food_dish)
+    - [sandwhich](food_dish)
+    - [rice](food_dish)
+    - [dosa](food_dish)
+    - [pizza](food_dish)
+    - [roti](food_dish)
+    - [burger](food_dish)
+    - id like [pizza](food_dish)
+    - ill go with [pasta](food_dish) i guess
+
+- intent: close_door_window
+  examples: |
+    - hey could you close the [door](closable_object)
+    - can you close the [window](closable_object)
+    - close that [window](closable_object) please
+    - shut the [door](closable_object)
+    - shut those [windows](closable_object)
+    - hey shut those [windows](closable_object) please
+    - the [windows](closable_object) need to be closed
+    - the [door](closable_object) needs to be shut
+    - the [door](closable_object) needs to be closed
+    - could you please close the [doors](closable_object) and [windows](closable_object)
+    - shut all the [windows](closable_object) and [doors](closable_object)
+    - close all the [doors](closable_object) and [windows](closable_object)
+    - close [doors](closable_object) and [windows](closable_object) in this floor
+    - also could you close the [windows](closable_object), its cold in here
+    - also could you close the [windows](closable_object), its cold
+    - close all the [doors](closable_object) and [windows](closable_object) on this floor
+    - close all the [doors](closable_object) and [windows](closable_object)
+    
+- intent: out_of_scope
+  examples: |
+    - call
+    - call my friend
+    - call home
+    - i wanna go home
+    - Can I go home?
+    - do my work
+    - help me finish my work
+    - finish my work
+    - take me home
+    - get me a ride home
+    - give me a raise
+    - i want more money
+    - increase my salary
+    - i resign
+    - i quit
+    - book a cab
+    - i want some days of vacation
+    - i want four days of holidays
+    - i am taking the next week off
+    - which room does the admin sit in
+    - Is the admin on leave today
+    - can you turn up the air conditioning
+    - Could you drive me home
+    - when is the admin free?
