@@ -1,24 +1,28 @@
+"""To set the state machine to interrupt the conversation after 60s,
+uncomment the lines to start and join the battery_thread."""
+
 import rospy
 import smach
 import chatbot
+import requests, json
 from threading import Thread
 from time import sleep
-import requests, json
 
+# returns escape sequence to format output text
 def esc(code):
         return f'\033[{code}m'
 
 class Conversing(smach.State):
     def __init__(self):
         super().__init__(outcomes=['end conversation', 'fetch something', 'close something', 'battery low'],
-                         input_keys=['name', 'known', 'language_choice'],
+                         input_keys=['name', 'known', 'language_choice', 'speech'],
                          output_keys=['lunch', 'object_name', 'closable_object', 'name', 'known'])
 
     def execute(self, userdata):
         if userdata.known=='true':
-            chatbot_slots = chatbot.start_conversation(username=userdata.name, language_choice=userdata.language_choice)
+            chatbot_slots = chatbot.start_conversation(username=userdata.name, language_choice=userdata.language_choice, speech=userdata.speech)
         else:
-            chatbot_slots = chatbot.start_conversation(language_choice=userdata.language_choice)
+            chatbot_slots = chatbot.start_conversation(language_choice=userdata.language_choice, speech=userdata.speech)
             if chatbot_slots.get('name') is not None:
                 if chatbot_slots['name'] != 'default':
                     userdata.known = 'true'
@@ -102,6 +106,13 @@ def main():
           " language code")
     sm.userdata.language_choice = input()
 
+    if chatbot.language_dict[sm.userdata.language_choice]['voice'] is None:
+        print("Speech not supported for this language")
+        sm.userdata.speech = False
+    else:
+        print("Do you want to enable speech? Type True to enable")
+        sm.userdata.speech = True if input().casefold()=='true' else False
+
     if sm.userdata.known=='true':
         battery_thread = Thread(target=battery_low_signal, args=[sm.userdata.name])
     else:
@@ -116,7 +127,10 @@ def main():
                                             'fetch something': 'fetching',
                                             'close something': 'closing',
                                             'battery low': 'battery low'},
-                               remapping={'known': 'known', 'name': 'name', 'language_choice': 'language_choice'})
+                               remapping={'known': 'known',
+                                          'name': 'name',
+                                          'language_choice': 'language_choice',
+                                          'speech': 'speech'})
         
         smach.StateMachine.add(label='fetching',
                                state=Fetching(),

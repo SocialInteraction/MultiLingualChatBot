@@ -1,12 +1,29 @@
 import requests, json, uuid
+import azure.cognitiveservices.speech as speechsdk
 
-language_dict = {"as": "Assamese", "bn": "Bangla", "en": "English", "gu": "Gujarati", "hi": "Hindi", "kn": "Kannada",
-                 "ml": "Malayalam", "mr": "Marathi", "or": "Odia", "pa": "Punjabi", "ta": "Tamil", "te": "Telugu",
-                 "ur": "Urdu"}
+azure_speech_key = "azure speech key"               # replace this with an azure speech resource key
+azure_translator_key = "azure translator key"       # replace this with an azure translator resource key
 
+language_dict = {"as": {"name": "Assamese", "voice": None},
+                 "bn": {"name": "Bengali", "voice": "bn-IN-TanishaaNeural"},
+                 "en": {"name": "English", "voice": "en-IN-NeerjaNeural"},
+                 "gu": {"name": "Gujarati", "voice": "gu-IN-DhwaniNeural"},
+                 "hi": {"name": "Hindi", "voice": "hi-IN-SwaraNeural"},
+                 "kn": {"name": "Kannada", "voice": "kn-IN-SapnaNeural"},
+                 "ml": {"name": "Malayalam", "voice": None},
+                 "mr": {"name": "Marathi", "voice": "mr-IN-AarohiNeural"},
+                 "or": {"name": "Odia", "voice": None},
+                 "pa": {"name": "Punjabi", "voice": None},
+                 "ta": {"name": "Tamil", "voice": "ta-IN-PallaviNeural"},
+                 "te": {"name": "Telugu", "voice": "te-IN-ShrutiNeural"},
+                 "ur": {"name": "Urdu", "voice": None}}
+
+# returns escape sequence to format output text
 def esc(code):
         return f'\033[{code}m'
 
+"""Reads the current data in the callback server and sets pause_bot and stop_bot accordingly.
+It also queries the chatbot for its current slot values."""
 def listen(sender_id, callback_url, chatbot_tracker_url, rasa_headers):
     response_text = {}
     chatbot_slots = {}
@@ -36,6 +53,7 @@ def listen(sender_id, callback_url, chatbot_tracker_url, rasa_headers):
 
     return (response_text, stop_bot, pause_bot, chatbot_slots)
 
+"""Sends the user input to the callback server and then does the same as the listen method."""
 def talk_and_listen(sender_id, chatbot_url, callback_url, chatbot_tracker_url, rasa_headers, data_to_be_passed):
     response_text = {}
     chatbot_slots = {}
@@ -90,9 +108,46 @@ def print_responses(en_text, language_choice, url, headers):
     
     if non_english_response_text is not None:
         print(esc('31;4;4')+language_dict[language_choice]+" response: "+non_english_response_text+esc(0))
+        return non_english_response_text
+    
+    return en_text
 
+def speech_to_text(language_choice):
+    speech_config = speechsdk.SpeechConfig(subscription=azure_speech_key, region="centralindia")
+    speech_config.speech_recognition_language = f"{language_choice}-IN"
+    audio_config = speechsdk.audio.AudioConfig(use_default_microphone=True)
+    speech_recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
+    print("Speak into your microphone")
+    speech_recognition_result = speech_recognizer.recognize_once_async().get()
 
-def start_conversation(username='default', language_choice='en'):
+    if speech_recognition_result.reason == speechsdk.ResultReason.RecognizedSpeech:
+        print("Text recognized: {}".format(speech_recognition_result.text))
+        return speech_recognition_result.text
+    elif speech_recognition_result.reason == speechsdk.ResultReason.NoMatch:
+        print("No speech could be recognized: {}".format(speech_recognition_result.no_match_details))
+    elif speech_recognition_result.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = speech_recognition_result.cancellation_details
+        print("Speech Recognition canceled: {}".format(cancellation_details.reason))
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+            print("Error details: {}".format(cancellation_details.error_details))
+    
+    return '/stop'
+
+def text_to_speech(text, language_choice):
+    speech_config = speechsdk.SpeechConfig(subscription=azure_speech_key, region="centralindia")
+    audio_config = speechsdk.audio.AudioOutputConfig(use_default_speaker=True)
+    speech_config.speech_synthesis_voice_name=language_dict[language_choice]['voice']
+    speech_synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config, audio_config=audio_config)
+    speech_synthesis_result = speech_synthesizer.speak_text_async(text).get()
+
+    if speech_synthesis_result.reason == speechsdk.ResultReason.Canceled:
+        cancellation_details = speech_synthesis_result.cancellation_details
+        print("Speech synthesis canceled: {}".format(cancellation_details.reason))
+        if cancellation_details.reason == speechsdk.CancellationReason.Error:
+            if cancellation_details.error_details:
+                print("Error details: {}".format(cancellation_details.error_details))
+
+def start_conversation(username='default', language_choice='en', speech=False):
     rasa_headers = {'Content-type': "application/json"}
     callback_params = {"output_channel": "latest"}
     chatbot_url = "http://0.0.0.0:5005/webhooks/callback/webhook"
@@ -100,7 +155,7 @@ def start_conversation(username='default', language_choice='en'):
     callback_url = "http://localhost:5034/bot"
     chatbot_tracker_url = "http://localhost:5005/conversations/{conversation_id}/tracker".format(conversation_id=username)
     
-    translator_key = 'Azure Translator Resource Key'
+    translator_key = azure_translator_key
     translator_endpoint = 'https://api.cognitive.microsofttranslator.com/'
     azure_location = 'centralindia'
     translator_path = '/translate'
@@ -112,6 +167,8 @@ def start_conversation(username='default', language_choice='en'):
 
     print("\nBot started\n")
 
+    """For the bot to start the conversation on its own, a trigger intent is sent to the bot.
+    The parameters of the trigger intent are defined below."""
     if username=='default':
         initial_data = {"name": "EXTERNAL_greet",
                         "entities": {"name": 'default',
@@ -126,9 +183,13 @@ def start_conversation(username='default', language_choice='en'):
     pause_bot = False
     chatbot_slots = {}
 
+    # the trigger intent is sent to the chatbot's server
     res = requests.post(url=intent_trigger_url, data=json.dumps(initial_data), params=callback_params, headers=rasa_headers)
     response_text = json.loads(res.text)['messages'][0]
-    print_responses(response_text['text'], language_choice, translator_url, translator_headers)
+    text_to_be_spoken =  print_responses(response_text['text'], language_choice, translator_url, translator_headers)
+
+    if speech:
+        text_to_speech(text=text_to_be_spoken, language_choice=language_choice)
 
     tracker_res = requests.get(url=chatbot_tracker_url, headers=rasa_headers)
     chatbot_slots = json.loads(tracker_res.text)['slots']
@@ -140,7 +201,10 @@ def start_conversation(username='default', language_choice='en'):
         if pause_bot==True:
             break
 
-        user_utterance = input()
+        if speech:
+            user_utterance = speech_to_text(language_choice=language_choice)
+        else:
+            user_utterance = input()
 
         if user_utterance=="/stop":
             return {}
@@ -151,6 +215,9 @@ def start_conversation(username='default', language_choice='en'):
         data_to_be_passed={
             "sender": username,
             "message": user_utterance}
+
+        """The current data in the callback server is checked before sending the user input to it.
+        If the current data has stop_bot or pause_bot set then the user input is not sent since the bot will pause/stop."""
 
         response_text_new, stop_bot, pause_bot, chatbot_slots = listen(username, callback_url, chatbot_tracker_url, rasa_headers)
 
@@ -183,7 +250,10 @@ def start_conversation(username='default', language_choice='en'):
             if request_failed==True:
                 break
 
-        print_responses(response_text['text'], language_choice, translator_url, translator_headers)
+        text_to_be_spoken = print_responses(response_text['text'], language_choice, translator_url, translator_headers)
+
+        if speech:
+            text_to_speech(text=text_to_be_spoken, language_choice=language_choice)
     
     return chatbot_slots
 
